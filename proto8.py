@@ -160,4 +160,3 @@ if st.button("대화 종료"):
         st.write("서비스를 이용해 주셔서 감사합니다!")
     else:
         st.write("대화를 종료합니다.")
-
