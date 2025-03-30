@@ -3,7 +3,7 @@ import pandas as pd
 import sqlite3
 
 # 데이터베이스 경로
-DB_PATH = '/mnt/data/job_seekers.db'
+DB_PATH = 'job_seekers.db'
 
 # 데이터베이스 연결 함수
 def connect_db():
@@ -73,7 +73,7 @@ if user_type == "구직자":
     # 일자리 추천 보기
     if st.button("일자리 추천 보기"):
         listings = get_job_listings()
-        ability_df = pd.read_excel("/mnt/data/장애유형_직무능력_매칭표 (1).xlsx")
+        ability_df = pd.read_excel("장애유형_직무능력_매칭표 (1).xlsx")
         ability_df['능력'].fillna(method='ffill', inplace=True)
         scores = []
         for _, row in listings.iterrows():
