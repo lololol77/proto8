@@ -1,100 +1,160 @@
-import streamlit as st
-import pandas as pd
 import sqlite3
+import streamlit as st
 
-# 데이터베이스 경로
-DB_PATH = 'job_seekers.db'
-
-# 데이터베이스 연결 함수
+# DB 연결 함수 (업로드된 DB 파일 사용)
 def connect_db():
-    conn = sqlite3.connect(DB_PATH)
+    db_path = '/mnt/data/job_matching_new.db'  # DB 파일 경로
+    conn = sqlite3.connect(db_path)  # DB 파일 경로로 연결
     return conn
 
-# 구직자 정보 저장 함수
+# 구직자 정보를 DB에 저장하는 함수
 def save_job_seeker(name, disability, severity):
-    conn = connect_db()
+    conn = connect_db()  # DB 연결
     cursor = conn.cursor()
+    
+    # 구직자 정보 'job_seekers' 테이블에 저장
     cursor.execute("INSERT INTO job_seekers (name, disability, severity) VALUES (?, ?, ?)", (name, disability, severity))
-    conn.commit()
-    conn.close()
+    
+    conn.commit()  # 변경 사항 커밋
+    conn.close()   # DB 연결 종료
 
-# 구인자 정보 저장 함수
-def save_job_listing(job_name, job_description, required_skills):
+# 구인자가 원하는 직무 정보와 능력 목록을 DB에 저장하는 함수
+def save_job_posting(job_title, abilities_required):
     conn = connect_db()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO job_listings (job_name, job_description, required_skills) VALUES (?, ?, ?)", (job_name, job_description, required_skills))
+    
+    # job_postings 테이블에 구인자 정보 저장
+    cursor.execute("INSERT INTO job_postings (job_title, abilities) VALUES (?, ?)", (job_title, ", ".join(abilities_required)))
+    
+    # 구인자가 원하는 능력도 'abilities' 테이블에 저장
+    for ability in abilities_required:
+        cursor.execute("INSERT OR IGNORE INTO abilities (name) VALUES (?)", (ability,))
+    
     conn.commit()
     conn.close()
 
-# 일자리 목록 조회 함수
-def get_job_listings():
+# 매칭 점수 계산 (합계 점수만으로 비교)
+def match_jobs(job_title, abilities_required, disability_type):
     conn = connect_db()
-    query = "SELECT * FROM job_listings"
-    listings = pd.read_sql_query(query, conn)
-    conn.close()
-    return listings
-
-# 유료 서비스 질문 함수
-def ask_premium_service(user_type):
-    if user_type == "구직자":
-        choice = st.radio("유료 취업준비 서비스를 이용하시겠습니까?", ("예", "아니오"))
-        st.write(f"선택: {choice}")
-    elif user_type == "구인자":
-        choice = st.radio("유료 직무개발 서비스를 이용하시겠습니까?", ("예", "아니오"))
-        st.write(f"선택: {choice}")
-
-# 일자리 매칭 알고리즘
-def calculate_match_score(required_skills, disability, severity, ability_df):
-    skills = required_skills.split(",")
-    score = 0
-    for skill in skills:
-        skill = skill.strip()
-        match = ability_df[(ability_df['능력'] == skill) & (ability_df['정도'] == severity)][disability].values
-        if len(match) > 0:
-            score += match[0]
+    cursor = conn.cursor()
+    
+    # 구직자의 장애유형에 맞는 점수 확인
+    matching_scores = []
+    
+    # 구인자가 요구하는 능력과 매칭 점수 계산
+    for ability in abilities_required:
+        # 능력 ID 얻기
+        cursor.execute("SELECT ability_id FROM abilities WHERE name=?", (ability,))
+        ability_id = cursor.fetchone()
+        
+        if ability_id is None:
+            continue  # 능력 ID가 없다면 넘어감
+        
+        # 구직자의 장애유형에 맞는 점수 얻기
+        cursor.execute("""
+            SELECT suitability 
+            FROM matching 
+            WHERE disability_id=(SELECT disability_id FROM disabilities WHERE name=?) 
+            AND ability_id=?
+        """, (disability_type, ability_id[0]))
+        
+        suitability = cursor.fetchone()
+        if suitability:
+            suitability = suitability[0]
         else:
-            return -1  # 매칭 불가능
-    return score
+            suitability = 0  # 매칭되지 않으면 0으로 처리
+        
+        matching_scores.append(suitability)
+    
+    # 점수 합계 계산
+    total_score = sum(matching_scores)
+    
+    conn.close()
+    
+    return total_score
 
-st.title("장애인 일자리 매칭 플랫폼")
+# 구직자 매칭 및 순위 정렬
+def get_sorted_matching_jobs(abilities_required, disability_type):
+    conn = sqlite3.connect("/mnt/data/job_matching_new.db")  # DB 파일 경로
+    cursor = conn.cursor()
+    
+    # 구인자가 원하는 능력에 맞는 구직자 매칭 처리
+    matching_results = []
+    unqualified_results = []
 
-user_type = st.selectbox("사용자 유형을 선택하세요", ["구직자", "구인자"])
+    cursor.execute("SELECT job_title, abilities FROM job_postings")
+    job_postings = cursor.fetchall()
 
-if user_type == "구직자":
-    st.header("구직자 정보 입력")
-    name = st.text_input("이름")
-    disability = st.selectbox("장애 유형", ["시각장애", "청각장애", "지체장애", "뇌병변장애", "언어장애", "안면장애", "신장장애", "심장장애", "간장애", "호흡기장애", "장루·요루장애", "뇌전증장애", "지적장애", "자폐성장애", "정신장애"])
+    for job_posting in job_postings:
+        job_title = job_posting[0]
+        abilities = job_posting[1].split(", ")
+
+        # 매칭 점수 계산
+        total_score = match_jobs(job_title, abilities_required, disability_type)
+        
+        if total_score < 1:
+            unqualified_results.append((job_title, "적합하지 않음"))
+        else:
+            matching_results.append((job_title, total_score))
+    
+    # 점수를 기준으로 적합한 일자리 내림차순 정렬
+    matching_results.sort(key=lambda x: x[1], reverse=True)
+
+    conn.close()
+    
+    return matching_results, unqualified_results
+
+# Streamlit UI 예시
+st.title("장애인 일자리 매칭 시스템")
+
+role = st.selectbox("사용자 역할 선택", ["구직자", "구인자"])
+
+# 구직자 기능
+if role == "구직자":
+    name = st.text_input("이름 입력")
+    disability = st.selectbox("장애유형", ["시각장애", "청각장애", "지체장애", "뇌병변장애", "언어장애", "안면장애", "신장장애", "심장장애", "간장애", "호흡기장애", "장루·요루장애", "뇌전증장애", "지적장애", "자폐성장애", "정신장애"])
     severity = st.selectbox("장애 정도", ["심하지 않은", "심한"])
-
-    if st.button("구직자 등록"):
+    
+    if st.button("매칭 결과 보기"):  # 구직자 매칭 버튼
+        # 구직자 정보 저장
         save_job_seeker(name, disability, severity)
-        st.success("구직자 정보가 저장되었습니다.")
+        
+        st.write(f"구직자 정보가 저장되었습니다: {name}, {disability}, {severity}")
+        
+        # 구인자가 원하는 직무와 능력 입력받기
+        job_title = st.text_input("구인자 직무명 입력")
+        abilities_required = st.multiselect("구인자가 원하는 능력", ["주의력", "아이디어 발상 및 논리적 사고", "기억력", "지각능력", "수리능력", "공간능력", "언어능력", "지구력", "유연성 · 균형 및 조정", "체력", "움직임 통제능력", "정밀한 조작능력", "반응시간 및 속도", "청각 및 언어능력", "시각능력"])
 
-    # 일자리 추천 보기
-    if st.button("일자리 추천 보기"):
-        listings = get_job_listings()
-        ability_df = pd.read_excel("장애유형_직무능력_매칭표 (1).xlsx")
-        ability_df['능력'].fillna(method='ffill', inplace=True)
-        scores = []
-        for _, row in listings.iterrows():
-            score = calculate_match_score(row['required_skills'], disability, severity, ability_df)
-            if score >= 0:
-                scores.append((row['job_name'], score))
-        scores.sort(key=lambda x: x[1], reverse=True)
-        st.write("적합한 일자리 목록:")
-        for job, score in scores:
-            st.write(f"{job} (적합도 점수: {score})")
+        # 매칭 결과 출력
+        matching_results, unqualified_results = get_sorted_matching_jobs(abilities_required, disability)
 
-    ask_premium_service("구직자")
+        st.write("### 적합한 일자리 목록:")
+        for job_title, score in matching_results:
+            st.write(f"- {job_title}: {score}점")
+        
+        st.write("### 비적합한 일자리 목록:")
+        for job_title, status in unqualified_results:
+            st.write(f"- {job_title}: {status}")
 
-if user_type == "구인자":
-    st.header("구인자 정보 입력")
-    job_name = st.text_input("업무명")
-    job_description = st.text_area("업무 설명")
-    required_skills = st.text_input("필요 능력 (쉼표로 구분)")
+# 구인자 기능
+elif role == "구인자":
+    job_title = st.text_input("일자리 제목 입력")
+    abilities = st.multiselect("필요한 능력 선택", ["주의력", "아이디어 발상 및 논리적 사고", "기억력", "지각능력", "수리능력", "공간능력", "언어능력", "지구력", "유연성 · 균형 및 조정", "체력", "움직임 통제능력", "정밀한 조작능력", "반응시간 및 속도", "청각 및 언어능력", "시각능력"])
+    
+    if st.button("등록"):  # 구인자 등록 버튼
+        # 구인자 정보 저장
+        save_job_posting(job_title, abilities)
+        st.success("구인자 정보가 저장되었습니다!")
+        st.write("일자리 제목:", job_title)
+        st.write("필요 능력:", ", ".join(abilities))  # 능력 리스트를 쉼표로 구분해서 표시
 
-    if st.button("구인자 등록"):
-        save_job_listing(job_name, job_description, required_skills)
-        st.success("일자리 정보가 저장되었습니다.")
-
-    ask_premium_service("구인자")
+# 유료 서비스 여부 확인
+if st.button("대화 종료"):
+    if role == "구직자":
+        use_service = st.radio("유료 취업준비 서비스 이용하시겠습니까?", ["네", "아니요"])
+    else:
+        use_service = st.radio("유료 직무개발 서비스 이용하시겠습니까?", ["네", "아니요"])
+    if use_service == "네":
+        st.write("서비스를 이용해 주셔서 감사합니다!")
+    else:
+        st.write("대화를 종료합니다.")
