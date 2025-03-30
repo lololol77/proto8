@@ -143,7 +143,7 @@ elif role == "구인자":
     job_title = st.text_input("일자리 제목 입력")
     abilities = st.multiselect("필요한 능력 선택", ["주의력", "아이디어 발상 및 논리적 사고", "기억력", "지각능력", "수리능력", "공간능력", "언어능력", "지구력", "유연성 · 균형 및 조정", "체력", "움직임 통제능력", "정밀한 조작능력", "반응시간 및 속도", "청각 및 언어능력", "시각능력"])
     
-    if st.button("등록"):  # 구인자 등록 버튼
+    if st.button("홈으로 돌아가기"):  # 구인자 등록 버튼
         # 구인자 정보 저장
         save_job_posting(job_title, abilities)
         st.success("구인자 정보가 저장되었습니다!")
