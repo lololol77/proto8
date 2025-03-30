@@ -143,20 +143,15 @@ elif role == "구인자":
     job_title = st.text_input("일자리 제목 입력")
     abilities = st.multiselect("필요한 능력 선택", ["주의력", "아이디어 발상 및 논리적 사고", "기억력", "지각능력", "수리능력", "공간능력", "언어능력", "지구력", "유연성 · 균형 및 조정", "체력", "움직임 통제능력", "정밀한 조작능력", "반응시간 및 속도", "청각 및 언어능력", "시각능력"])
     
-    if st.button("홈으로 돌아가기"):  # 구인자 등록 버튼
+    if st.button("등록"):  # 구인자 등록 버튼
         # 구인자 정보 저장
         save_job_posting(job_title, abilities)
         st.success("구인자 정보가 저장되었습니다!")
         st.write("일자리 제목:", job_title)
         st.write("필요 능력:", ", ".join(abilities))  # 능력 리스트를 쉼표로 구분해서 표시
 
-# 유료 서비스 여부 확인
-if st.button("대화 종료"):
-    if role == "구직자":
-        use_service = st.radio("유료 취업준비 서비스 이용하시겠습니까?", ["네", "아니요"])
-    else:
-        use_service = st.radio("유료 직무개발 서비스 이용하시겠습니까?", ["네", "아니요"])
-    if use_service == "네":
-        st.write("서비스를 이용해 주셔서 감사합니다!")
-    else:
-        st.write("대화를 종료합니다.")
+# 구인자와 구직자 추가 질문을 디폴트로 설정
+if role == "구직자" or role == "구인자":
+    st.write("### 추가 질문")
+    additional_question = st.text_area("구인자/구직자 추가 질문을 입력하세요:", "예: 구직자 조건에 맞는 추가 질문을 작성하세요.")
+
