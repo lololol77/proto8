@@ -43,7 +43,7 @@ def match_jobs(job_title, abilities_required, disability_type):
     
     # 구인자가 요구하는 능력과 매칭 점수 계산
     for ability in abilities_required:
-        # 능력 ID 얻기
+        # 능력 이름으로 매칭 처리
         cursor.execute("SELECT ability_id FROM abilities WHERE name=?", (ability,))
         ability_id = cursor.fetchone()
         
@@ -171,4 +171,3 @@ elif role == "구인자":
         # 대화 종료 버튼 표시
         if st.button("대화 종료"):
             st.write("대화를 종료합니다.")
-
