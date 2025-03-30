@@ -3,7 +3,7 @@ import streamlit as st
 
 # DB 연결 함수 (업로드된 DB 파일 사용)
 def connect_db():
-    db_path = '/mnt/data/job_matching_new.db'  # DB 파일 경로
+    db_path = 'job_matching_new.db'  # DB 파일 경로
     conn = sqlite3.connect(db_path)  # DB 파일 경로로 연결
     return conn
 
