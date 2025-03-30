@@ -46,18 +46,19 @@ def 직무_매칭_점수_계산(일자리_제목, 필요한_능력, 장애유형
         if 능력 is None or 능력 == "":
             continue  # 능력 값이 유효하지 않으면 넘어감
         
-        # 능력 이름으로 매칭 처리
-        cursor.execute("SELECT ability_id FROM abilities WHERE name=?", (능력,))
+        # 능력 이름으로 매칭 처리 (abilities 테이블에서 id 조회)
+        cursor.execute("SELECT id FROM abilities WHERE TRIM(UPPER(name)) = TRIM(UPPER(?))", (능력,))
         능력_id = cursor.fetchone()
         
         if 능력_id is None:
+            print(f"능력 '{능력}'에 해당하는 ID가 없습니다.")  # 디버깅 메시지
             continue  # 능력 ID가 없다면 넘어감
         
-        # 구직자의 장애유형에 맞는 점수 얻기
+        # 구직자의 장애유형에 맞는 점수 얻기 (disabilities 테이블에서 disability_id 조회)
         cursor.execute("""
             SELECT suitability 
             FROM matching 
-            WHERE disability_id=(SELECT disability_id FROM disabilities WHERE name=?) 
+            WHERE disability_id=(SELECT id FROM disabilities WHERE name=?)  -- disabilities 테이블에서 id를 찾음
             AND ability_id=?
         """, (장애유형, 능력_id[0]))
         
