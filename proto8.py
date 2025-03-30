@@ -18,7 +18,7 @@ def save_job_seeker(name, disability, severity):
     conn.commit()  # 변경 사항 커밋
     conn.close()   # DB 연결 종료
 
-# 구인자가 원하는 직무 정보와 능력 목록을 DB에 저장하는 함수
+# 구인자가 원하는 직무 정보와 능력 목록을 별도의 DB 테이블에 저장하는 함수
 def save_job_posting(job_title, abilities_required):
     conn = connect_db()
     cursor = conn.cursor()
@@ -137,6 +137,17 @@ if role == "구직자":
         st.write("### 적합한 일자리 목록:")
         for job_title, score in matching_results:
             st.write(f"- {job_title}: {score}점")
+        
+        # **유료 서비스 관련 추가 질문 자동 표시**
+        use_service = st.radio("유료 취업준비 서비스 이용하시겠습니까?", ["네", "아니요"])
+        if use_service == "네":
+            st.write("유료 서비스 이용해주셔서 감사합니다!")
+        else:
+            st.write("유료 서비스 이용을 하지 않으셨습니다.")
+
+        # 대화 종료 버튼 표시
+        if st.button("대화 종료"):
+            st.write("대화를 종료합니다.")
 
 # 구인자 기능
 elif role == "구인자":
@@ -150,8 +161,14 @@ elif role == "구인자":
         st.write("일자리 제목:", job_title)
         st.write("필요 능력:", ", ".join(abilities))  # 능력 리스트를 쉼표로 구분해서 표시
 
-# 구인자와 구직자 추가 질문을 디폴트로 설정
-if role == "구직자" or role == "구인자":
-    st.write("### 추가 질문")
-    additional_question = st.text_area("구인자/구직자 추가 질문을 입력하세요:", "예: 구직자 조건에 맞는 추가 질문을 작성하세요.")
+        # **유료 서비스 관련 추가 질문 자동 표시**
+        use_service = st.radio("유료 직무개발 서비스 이용하시겠습니까?", ["네", "아니요"])
+        if use_service == "네":
+            st.write("유료 직무개발 서비스 이용해주셔서 감사합니다!")
+        else:
+            st.write("유료 직무개발 서비스를 이용하지 않으셨습니다.")
+
+        # 대화 종료 버튼 표시
+        if st.button("대화 종료"):
+            st.write("대화를 종료합니다.")
 
