@@ -121,25 +121,25 @@ if 역할 == "구직자":
    
     if st.button("매칭 결과 보기"):  # 구직자 매칭 버튼
     # 구직자 정보 저장
-    구직자_정보_저장(이름, 장애유형, 장애정도)
+        구직자_정보_저장(이름, 장애유형, 장애정도)
     
-    st.write(f"구직자 정보가 저장되었습니다: {이름}, {장애유형}, {장애정도}")
+        st.write(f"구직자 정보가 저장되었습니다: {이름}, {장애유형}, {장애정도}")
     
-    # 구인자가 등록한 능력 자동 불러오기
-    필요한_능력 = []
-    conn = 연결_함수()
-    cursor = conn.cursor()
+        # 구인자가 등록한 능력 자동 불러오기
+        필요한_능력 = []
+        conn = 연결_함수()
+        cursor = conn.cursor()
     
     # 구인자가 등록한 직무 정보 가져오기
-    cursor.execute("SELECT abilities FROM job_postings")
-    직무_등록 = cursor.fetchall()
-    for 직무 in 직무_등록:
+        cursor.execute("SELECT abilities FROM job_postings")
+        직무_등록 = cursor.fetchall()
+        for 직무 in 직무_등록:
         필요한_능력 = 직무[0].split(", ")  # 구인자가 등록한 능력 목록
     
-    conn.close()
+        conn.close()
 
     # 매칭 결과 출력
-    매칭_결과 = 매칭_결과_정렬(필요한_능력, 장애유형)
+        매칭_결과 = 매칭_결과_정렬(필요한_능력, 장애유형)
 
     # 매칭된 일자리 목록 출력
     if 매칭_결과:
