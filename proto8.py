@@ -59,7 +59,7 @@ def 직무_매칭_점수_계산(일자리_제목, 필요한_능력, 장애유형
             SELECT suitability 
             FROM matching 
             WHERE disability_id=(SELECT id FROM disabilities WHERE name=?)  -- disabilities 테이블에서 id를 찾음
-            AND ability_id=?
+            AND ability_id=? 
         """, (장애유형, 능력_id[0]))
         
         적합도 = cursor.fetchone()
@@ -120,7 +120,7 @@ if 역할 == "구직자":
     장애정도 = st.selectbox("장애 정도", ["심하지 않은", "심한"])
    
     if st.button("매칭 결과 보기"):  # 구직자 매칭 버튼
-    # 구직자 정보 저장
+        # 구직자 정보 저장
         구직자_정보_저장(이름, 장애유형, 장애정도)
     
         st.write(f"구직자 정보가 저장되었습니다: {이름}, {장애유형}, {장애정도}")
@@ -130,36 +130,31 @@ if 역할 == "구직자":
         conn = 연결_함수()
         cursor = conn.cursor()
     
-    # 구인자가 등록한 직무 정보 가져오기
+        # 구인자가 등록한 직무 정보 가져오기
         cursor.execute("SELECT abilities FROM job_postings")
         직무_등록 = cursor.fetchall()
         for 직무 in 직무_등록:
             필요한_능력 = 직무[0].split(", ")  # 구인자가 등록한 능력 목록
     
-            conn.close()
+        conn.close()
 
-    # 매칭 결과 출력
+        # 매칭 결과 출력
         매칭_결과 = 매칭_결과_정렬(필요한_능력, 장애유형)
 
-    # 매칭된 일자리 목록 출력
-    if 매칭_결과:
-        st.write("### 적합한 일자리 목록:")
-        for 일자리_제목, 점수 in 매칭_결과:
-            st.write(f"- {일자리_제목}: {점수}점")
-    else:
-        st.write("적합한 일자리가 없습니다.")
-    
-    # **유료 서비스 관련 추가 질문 자동 표시**
-    유료_서비스 = st.radio("유료 취업준비 서비스 이용하시겠습니까?", ["네", "아니요"])
-    if 유료_서비스 == "네":
-        st.write("유료 서비스 이용해주셔서 감사합니다!")
-    else:
-        st.write("유료 서비스 이용을 하지 않으셨습니다.")
-
-    # 대화 종료 버튼 표시
-    if st.button("대화 종료"):
-        st.write("대화를 종료합니다.")
-
+        # 매칭된 일자리 목록 출력
+        if len(매칭_결과) > 0:
+            st.write("### 적합한 일자리 목록:")
+            for 일자리_제목, 점수 in 매칭_결과:
+                st.write(f"- {일자리_제목}: {점수}점")
+        else:
+            st.write("적합한 일자리가 없습니다.")
+        
+        # **유료 서비스 관련 추가 질문 자동 표시**
+        유료_서비스 = st.radio("유료 취업준비 서비스 이용하시겠습니까?", ["네", "아니요"])
+        if 유료_서비스 == "네":
+            st.write("유료 서비스 이용해주셔서 감사합니다!")
+        else:
+            st.write("유료 서비스 이용을 하지 않으셨습니다.")
 
         # 대화 종료 버튼 표시
         if st.button("대화 종료"):
