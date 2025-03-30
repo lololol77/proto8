@@ -134,9 +134,9 @@ if 역할 == "구직자":
         cursor.execute("SELECT abilities FROM job_postings")
         직무_등록 = cursor.fetchall()
         for 직무 in 직무_등록:
-        필요한_능력 = 직무[0].split(", ")  # 구인자가 등록한 능력 목록
+            필요한_능력 = 직무[0].split(", ")  # 구인자가 등록한 능력 목록
     
-        conn.close()
+            conn.close()
 
     # 매칭 결과 출력
         매칭_결과 = 매칭_결과_정렬(필요한_능력, 장애유형)
