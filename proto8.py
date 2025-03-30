@@ -1,10 +1,10 @@
 import sqlite3
 import streamlit as st
 
-# DB 연결 함수
+# DB 연결 함수 (업로드된 DB 파일 사용)
 def connect_db():
-    db_path = 'job_matching_new.db'  # 상대 경로로 지정
-    conn = sqlite3.connect(db_path)
+    db_path = '/mnt/data/job_matching_new.db'  # DB 파일 경로
+    conn = sqlite3.connect(db_path)  # DB 파일 경로로 연결
     return conn
 
 # 구직자 정보를 DB에 저장하는 함수
@@ -80,7 +80,6 @@ def get_sorted_matching_jobs(abilities_required, disability_type):
     
     # 구인자가 원하는 능력에 맞는 구직자 매칭 처리
     matching_results = []
-    unqualified_results = []
 
     cursor.execute("SELECT job_title, abilities FROM job_postings")
     job_postings = cursor.fetchall()
@@ -92,9 +91,7 @@ def get_sorted_matching_jobs(abilities_required, disability_type):
         # 매칭 점수 계산
         total_score = match_jobs(job_title, abilities_required, disability_type)
         
-        if total_score < 1:
-            unqualified_results.append((job_title, "적합하지 않음"))
-        else:
+        if total_score >= 1:
             matching_results.append((job_title, total_score))
     
     # 점수를 기준으로 적합한 일자리 내림차순 정렬
@@ -102,7 +99,7 @@ def get_sorted_matching_jobs(abilities_required, disability_type):
 
     conn.close()
     
-    return matching_results, unqualified_results
+    return matching_results
 
 # Streamlit UI 예시
 st.title("장애인 일자리 매칭 시스템")
@@ -122,19 +119,14 @@ if role == "구직자":
         st.write(f"구직자 정보가 저장되었습니다: {name}, {disability}, {severity}")
         
         # 구인자가 원하는 직무와 능력 입력받기
-        job_title = st.text_input("구인자 직무명 입력")
         abilities_required = st.multiselect("구인자가 원하는 능력", ["주의력", "아이디어 발상 및 논리적 사고", "기억력", "지각능력", "수리능력", "공간능력", "언어능력", "지구력", "유연성 · 균형 및 조정", "체력", "움직임 통제능력", "정밀한 조작능력", "반응시간 및 속도", "청각 및 언어능력", "시각능력"])
 
         # 매칭 결과 출력
-        matching_results, unqualified_results = get_sorted_matching_jobs(abilities_required, disability)
+        matching_results = get_sorted_matching_jobs(abilities_required, disability)
 
         st.write("### 적합한 일자리 목록:")
         for job_title, score in matching_results:
             st.write(f"- {job_title}: {score}점")
-        
-        st.write("### 비적합한 일자리 목록:")
-        for job_title, status in unqualified_results:
-            st.write(f"- {job_title}: {status}")
 
 # 구인자 기능
 elif role == "구인자":
