@@ -84,24 +84,26 @@ def 매칭_결과_정렬(필요한_능력, 장애유형):
     conn = sqlite3.connect("job_matching_new.db")  # DB 파일 경로
     cursor = conn.cursor()
     
-    # 구인자가 원하는 능력에 맞는 구직자 매칭 처리
     매칭_결과 = []
-
     cursor.execute("SELECT job_title, abilities FROM job_postings")
     직무_등록 = cursor.fetchall()
-
+    
     for 직무 in 직무_등록:
         일자리_제목 = 직무[0]
         능력들 = 직무[1].split(", ")
-
+        
         # 매칭 점수 계산
         총점수 = 직무_매칭_점수_계산(일자리_제목, 능력들, 장애유형)
         
-        # 점수가 0 이상인 일자리도 모두 포함 (0점도 포함)
-        if 총점수 >= 0:
+        # 디버깅용 출력 (점수 확인)
+        print(f"일자리: {일자리_제목}, 총점수: {총점수}")
+        st.write(f"일자리: {일자리_제목}, 총점수: {총점수}")
+
+        # 점수가 0 이상인 일자리 포함
+        if 총점수 >= 0:  # 점수가 0인 것 포함
             매칭_결과.append((일자리_제목, 총점수))
     
-    # 점수를 기준으로 적합한 일자리 내림차순 정렬
+    # 점수 기준 내림차순 정렬
     매칭_결과.sort(key=lambda x: x[1], reverse=True)
 
     conn.close()
