@@ -91,7 +91,7 @@ def get_sorted_matching_jobs(abilities_required, disability_type):
         # 매칭 점수 계산
         total_score = match_jobs(job_title, abilities_required, disability_type)
         
-        if total_score >= 1:
+        if total_score >= 1:  # 적합한 일자리 점수만 표시
             matching_results.append((job_title, total_score))
     
     # 점수를 기준으로 적합한 일자리 내림차순 정렬
@@ -118,8 +118,18 @@ if role == "구직자":
         
         st.write(f"구직자 정보가 저장되었습니다: {name}, {disability}, {severity}")
         
-        # 구인자가 원하는 직무와 능력 입력받기
-        abilities_required = st.multiselect("구인자가 원하는 능력", ["주의력", "아이디어 발상 및 논리적 사고", "기억력", "지각능력", "수리능력", "공간능력", "언어능력", "지구력", "유연성 · 균형 및 조정", "체력", "움직임 통제능력", "정밀한 조작능력", "반응시간 및 속도", "청각 및 언어능력", "시각능력"])
+        # 구인자가 등록한 능력 자동 불러오기
+        abilities_required = []
+        conn = connect_db()
+        cursor = conn.cursor()
+        
+        # 구인자가 등록한 직무 정보 가져오기
+        cursor.execute("SELECT abilities FROM job_postings")
+        job_postings = cursor.fetchall()
+        for job_posting in job_postings:
+            abilities_required = job_posting[0].split(", ")  # 구인자가 등록한 능력 목록
+        
+        conn.close()
 
         # 매칭 결과 출력
         matching_results = get_sorted_matching_jobs(abilities_required, disability)
@@ -150,3 +160,4 @@ if st.button("대화 종료"):
         st.write("서비스를 이용해 주셔서 감사합니다!")
     else:
         st.write("대화를 종료합니다.")
+
